@@ -3,7 +3,6 @@ import requests
 import xmltodict
 from IPython import embed
 
-import xml.etree.ElementTree as et
 from xml.sax.saxutils import unescape
 from pprint import pprint
 from getpass import getpass
