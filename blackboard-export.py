@@ -138,11 +138,11 @@ if __name__ == '__main__':
     courses_xml = xmltodict.parse(courses_xml_text)
     courses = courses_xml['mobileresponse']['courses']['course']
     for course in courses:
-        query_params = {'course_id':course['@bbid']}
+        course_path = path.join('courses', course['@courseid'])
         print('Getting', course['@name'])
         course_map = get_course_map(session, course)['mobileresponse']['map']['map-item']
         # make directory for course
-        makedirs(path.join('courses', course['@courseid']))
+        makedirs(course_path)
 
         print('\tAnnouncements')
         announcements = get_course_announcements(session, course)
