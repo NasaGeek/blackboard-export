@@ -3,6 +3,7 @@ import requests
 import xmltodict
 from IPython import embed
 
+import csv
 from xml.sax.saxutils import unescape
 from pprint import pprint
 from getpass import getpass
@@ -167,6 +168,19 @@ if __name__ == '__main__':
             except FileExistsError:
                 pass
 
+    def parse_grades(grades, base_path):
+        try:
+            with open(path.join(base_path, 'grades.csv'), 'x', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['Name', 'Grade', 'ScoreValue', 'Points Possible',
+                    'Category', 'Average', 'Median', 'Comments'])
+                columnkeys = ['@name', '@grade', '@scoreValue', '@pointspossible',
+                    '@gradeBookType', '@average', '@median', '@comments']
+                for grade in grades:
+                    writer.writerow([grade.get(key) for key in columnkeys])
+        except FileExistsError:
+            pass
+
     USER_EID = input('Please enter your Blackboard username:')
     USER_PASSWORD = getpass('Please enter your Blackboard password:')
 
@@ -194,6 +208,8 @@ if __name__ == '__main__':
 
         print('\tGrades')
         grades = get_course_grades(session, course)
+        if grades:
+            parse_grades(grades, course_path)
 
         print('\tFiles')
         files_path = path.join(course_path, 'files')
