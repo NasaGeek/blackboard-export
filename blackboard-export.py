@@ -7,6 +7,7 @@ import xml.etree.ElementTree as et
 from pprint import pprint
 from getpass import getpass
 from os import path, makedirs
+import functools
 
 if __name__ == '__main__':
     BB_DOMAIN = 'https://blackboard.utexas.edu/webapps/Bb-mobile-BBLEARN'
@@ -17,6 +18,8 @@ if __name__ == '__main__':
 
     EXPORT_PATH = 'courses'
     XML_CACHE_PATH = path.join(EXPORT_PATH, '.xmlcache')
+
+    makedirs = functools.partial(makedirs, exist_ok=True)
 
     def cache_data(file_suffix):
         def actual_decorator(fun):
@@ -56,7 +59,7 @@ if __name__ == '__main__':
     USER_EID = input('Please enter your Blackboard username:')
     USER_PASSWORD = getpass('Please enter your Blackboard password:')
 
-    makedirs(XML_CACHE_PATH, exist_ok=True)
+    makedirs(XML_CACHE_PATH)
 
     session = requests.Session()
     # authenticate the session
@@ -73,7 +76,7 @@ if __name__ == '__main__':
         print('Getting', course['@name'])
         course_map = get_course_map(session, course)
         # make directory for course
-        makedirs(path.join('courses', course['@courseid']), exist_ok=True)
+        makedirs(path.join('courses', course['@courseid']))
 
         print('\tAnnouncements')
         announcements = get_course_announcements(session, course)
