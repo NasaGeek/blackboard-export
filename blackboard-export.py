@@ -106,7 +106,8 @@ if __name__ == '__main__':
         for map_item in course_map:
             if map_item['@isfolder'] == 'true':
                 print('\t\tEntering', map_item['@name'])
-                new_cwd = path.join(cwd, map_item['@name'])
+                new_cwd = path.join(cwd,
+                        map_item['@name'].translate(valid_path_char_map))
                 makedirs(new_cwd)
                 if 'children' not in map_item:
                     # empty folder
@@ -120,7 +121,7 @@ if __name__ == '__main__':
                 TODO: item name can contain html, should I really be
                 using it as the folder name?
                 """
-                content_path = path.join(cwd, map_item['@name'])
+                content_path = path.join(cwd, map_item['@name'].translate(valid_path_char_map))
                 makedirs(content_path)
                 content_detail = get_content_detail(session, course,
                         map_item['@contentid'])
@@ -142,7 +143,7 @@ if __name__ == '__main__':
                     for attachment in attachments:
                         try:
                             with open(path.join(content_path,
-                                attachment['@name']), 'xb') as destination:
+                                attachment['@name'].translate(valid_path_char_map)), 'xb') as destination:
                                 download = session.get(BB_DOMAIN +
                                     unescape(attachment['@uri']))
                                 destination.write(download.content)
@@ -195,7 +196,7 @@ if __name__ == '__main__':
     print('Getting course list')
     courses = get_courses(session, {'@courseid': 'courses'})
     for course in courses:
-        course_path = path.join('courses', course['@courseid'])
+        course_path = path.join('courses', course['@courseid'].translate(valid_path_char_map))
         print('Getting', course['@name'])
         course_map = get_course_map(session, course)
         # make directory for course
