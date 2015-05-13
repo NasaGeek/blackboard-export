@@ -23,6 +23,8 @@ if __name__ == '__main__':
 
     makedirs = functools.partial(makedirs, exist_ok=True)
 
+    valid_path_char_map = str.maketrans(':\|/<>"?*', "------'--")
+
     def dict_to_list(fun):
         def func_wrapper(*args, **kwargs):
             dict_ = fun(*args, **kwargs)
@@ -150,6 +152,21 @@ if __name__ == '__main__':
                 # nothing of interest
                 pass
 
+    def parse_announcements(announcements, base_path):
+        announcements_path = path.join(base_path, 'announcements')
+        makedirs(announcements_path)
+        for announcement in announcements:
+            filename = announcement['@startdate'] + ' - ' + announcement['@subject'] + '.html'
+            filename = filename.translate(valid_path_char_map)
+            try:
+                with open(path.join(announcements_path, filename), 'x') as outfile:
+                    #TODO: convert to markdown?
+                    outfile.write(announcement['#text'])
+                    if '@userdisplayname' in announcement:
+                        outfile.write('\n' + announcement['@userdisplayname'])
+            except FileExistsError:
+                pass
+
     USER_EID = input('Please enter your Blackboard username:')
     USER_PASSWORD = getpass('Please enter your Blackboard password:')
 
@@ -172,6 +189,8 @@ if __name__ == '__main__':
 
         print('\tAnnouncements')
         announcements = get_course_announcements(session, course)
+        if announcements:
+            parse_announcements(announcements, course_path)
 
         print('\tGrades')
         grades = get_course_grades(session, course)
