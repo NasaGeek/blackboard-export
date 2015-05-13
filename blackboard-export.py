@@ -23,6 +23,22 @@ if __name__ == '__main__':
 
     makedirs = functools.partial(makedirs, exist_ok=True)
 
+    def dict_to_list(fun):
+        def func_wrapper(*args, **kwargs):
+            dict_ = fun(*args, **kwargs)
+            if isinstance(dict_, dict):
+                return [dict_]
+            else:
+                return dict_
+        return func_wrapper
+
+    def unwrap_tags(keys):
+        def actual_decorator(fun):
+            def func_wrapper(*args, **kwargs):
+                return functools.reduce(dict.get, keys, fun(*args, **kwargs))
+            return func_wrapper
+        return actual_decorator
+
     def cache_data(file_suffix_or_index):
         def actual_decorator(fun):
             def func_wrapper(*args, **kwargs):
@@ -34,12 +50,13 @@ if __name__ == '__main__':
                         '-' + file_suffix + '.xml'
                 if path.exists(cache_file):
                     with open(cache_file, 'rb') as cache:
-                        return xmltodict.parse(cache)
+                        # TODO: catch exception and redownload
+                        return xmltodict.parse(cache)['mobileresponse']
                 else:
                     course_data = fun(*args, **kwargs)
                     with open(cache_file, 'w') as cache:
                         cache.write(course_data)
-                return xmltodict.parse(course_data)
+                return xmltodict.parse(course_data)['mobileresponse']
             return func_wrapper
         return actual_decorator
 
@@ -48,23 +65,39 @@ if __name__ == '__main__':
                         'course_section':course_section}
         return session.get(COURSE_DATA_URL, params=query_params).text
 
+    @dict_to_list
+    def dict_to_list_fun(dict_):
+        return dict_
+
+    @dict_to_list
+    @unwrap_tags(['map','map-item'])
     @cache_data('coursemap')
     def get_course_map(session, course):
         query_params = {'course_id':course['@bbid']}
         return session.get(COURSE_MAP_URL, params=query_params).text
 
-    @cache_data('announcements')
+    @dict_to_list
+    @unwrap_tags(['grades','grade-item'])
+    @cache_data('grades')
     def get_course_grades(session, course):
         return get_course_data(session, course, 'GRADES')
 
-    @cache_data('grades')
+    @dict_to_list
+    @unwrap_tags(['announcements','announcement'])
+    @cache_data('announcements')
     def get_course_announcements(session, course):
         return get_course_data(session, course, 'ANNOUNCEMENTS')
 
+    @unwrap_tags(['content'])
     @cache_data(2)
     def get_content_detail(session, course, content_id):
         query_params = {'course_id':course['@bbid'], 'content_id':content_id}
         return session.get(CONTENT_DETAIL_URL, params=query_params).text
+
+    @unwrap_tags(['courses','course'])
+    @cache_data('courses')
+    def get_courses(session, _):
+        return session.get(COURSES_URL).text
 
     def parse_course_map(session, course, course_map, cwd):
         for map_item in course_map:
@@ -75,9 +108,7 @@ if __name__ == '__main__':
                 if 'children' not in map_item:
                     # empty folder
                     break
-                folder = map_item['children']['map-item']
-                if isinstance(folder, dict):
-                    folder = [folder]
+                folder = dict_to_list_fun(map_item['children']['map-item'])
                 parse_course_map(session, course, folder, new_cwd)
             elif map_item['@linktype'] in ['resource/x-bb-document', 'resource/x-bb-file']:
                 # item is downloadable, have at it
@@ -89,7 +120,7 @@ if __name__ == '__main__':
                 content_path = path.join(cwd, map_item['@name'])
                 makedirs(content_path)
                 content_detail = get_content_detail(session, course,
-                        map_item['@contentid'])['mobileresponse']['content']
+                        map_item['@contentid'])
                 if content_detail.get('body'):
                     try:
                         # write content description out to an html file
@@ -104,9 +135,7 @@ if __name__ == '__main__':
                         # file already exists, don't write again
                         pass
                 if content_detail.get('attachments',{}).get('attachment'):
-                    attachments = content_detail['attachments']['attachment']
-                    if isinstance(attachments, dict):
-                        attachments = [attachments]
+                    attachments = dict_to_list_fun(content_detail['attachments']['attachment'])
                     for attachment in attachments:
                         try:
                             with open(path.join(content_path,
@@ -133,13 +162,11 @@ if __name__ == '__main__':
 
     # get courses user has been enrolled in
     print('Getting course list')
-    courses_xml_text = session.get(COURSES_URL).text
-    courses_xml = xmltodict.parse(courses_xml_text)
-    courses = courses_xml['mobileresponse']['courses']['course']
+    courses = get_courses(session, {'@courseid': 'courses'})
     for course in courses:
         course_path = path.join('courses', course['@courseid'])
         print('Getting', course['@name'])
-        course_map = get_course_map(session, course)['mobileresponse']['map']['map-item']
+        course_map = get_course_map(session, course)
         # make directory for course
         makedirs(course_path)
 
@@ -152,8 +179,6 @@ if __name__ == '__main__':
         print('\tFiles')
         files_path = path.join(course_path, 'files')
         makedirs(files_path)
-        if isinstance(course_map, dict):
-            course_map = [course_map]
         parse_course_map(session, course, course_map, files_path)
 
         print('\tAssignments')
