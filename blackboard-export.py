@@ -4,6 +4,7 @@ import xmltodict
 from IPython import embed
 
 import csv
+from xml.parsers.expat import ExpatError
 from xml.sax.saxutils import unescape
 from pprint import pprint
 from getpass import getpass
@@ -51,15 +52,20 @@ if __name__ == '__main__':
                     file_suffix = args[file_suffix]
                 cache_file = path.join(XML_CACHE_PATH, course['@courseid']) + \
                         '-' + file_suffix + '.xml'
+                should_download = True
                 if path.exists(cache_file):
+                    should_download = False
                     with open(cache_file, 'r', encoding='utf-8') as cache:
-                        # TODO: catch exception and redownload
-                        return xmltodict.parse(cache)['mobileresponse']
-                else:
+                        try:
+                            return xmltodict.parse(cache.read())['mobileresponse']
+                        except ExpatError:
+                            # error when parsing, redownload
+                            should_download = True
+                if should_download:
                     course_data = fun(*args, **kwargs)
                     with open(cache_file, 'w', encoding='utf-8') as cache:
                         cache.write(course_data)
-                return xmltodict.parse(course_data)['mobileresponse']
+                    return xmltodict.parse(course_data)['mobileresponse']
             return func_wrapper
         return actual_decorator
 
