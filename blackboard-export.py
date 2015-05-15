@@ -52,12 +52,12 @@ if __name__ == '__main__':
                 cache_file = path.join(XML_CACHE_PATH, course['@courseid']) + \
                         '-' + file_suffix + '.xml'
                 if path.exists(cache_file):
-                    with open(cache_file, 'rb') as cache:
+                    with open(cache_file, 'r', encoding='utf-8') as cache:
                         # TODO: catch exception and redownload
                         return xmltodict.parse(cache)['mobileresponse']
                 else:
                     course_data = fun(*args, **kwargs)
-                    with open(cache_file, 'w') as cache:
+                    with open(cache_file, 'w', encoding='utf-8') as cache:
                         cache.write(course_data)
                 return xmltodict.parse(course_data)['mobileresponse']
             return func_wrapper
@@ -128,7 +128,8 @@ if __name__ == '__main__':
                 if content_detail.get('body'):
                     try:
                         # write content description out to an html file
-                        with open(path.join(content_path, 'description.html'), 'x') as description:
+                        with open(path.join(content_path, 'description.html'),
+                                'x', encoding='utf-8') as description:
                             """
                             FIXME: text gets corrupted sometimes, specific example:
                             course:_142609_1 content:_4428774_1 apostrophe gets
@@ -161,7 +162,8 @@ if __name__ == '__main__':
             filename = announcement['@startdate'] + ' - ' + announcement['@subject'] + '.html'
             filename = filename.translate(valid_path_char_map)
             try:
-                with open(path.join(announcements_path, filename), 'x') as outfile:
+                with open(path.join(announcements_path, filename), 'x',
+                        encoding='utf-8') as outfile:
                     #TODO: convert to markdown?
                     outfile.write(announcement.get('#text', 'No announcement text'))
                     if '@userdisplayname' in announcement:
