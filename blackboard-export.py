@@ -105,7 +105,7 @@ if __name__ == '__main__':
     def parse_course_map(session, course, course_map, cwd):
         for map_item in course_map:
             if map_item['@isfolder'] == 'true':
-                print('\t\tEntering', map_item['@name'])
+                print('    Entering', map_item['@name'])
                 new_cwd = path.join(cwd,
                         map_item['@name'].translate(valid_path_char_map))
                 makedirs(new_cwd)
@@ -116,7 +116,7 @@ if __name__ == '__main__':
                 parse_course_map(session, course, folder, new_cwd)
             elif map_item['@linktype'] in ['resource/x-bb-document', 'resource/x-bb-file']:
                 # item is downloadable, have at it
-                print('\t\t\tDownloading', map_item['@name'])
+                print('      Downloading', map_item['@name'])
                 """
                 TODO: item name can contain html, should I really be
                 using it as the folder name?
@@ -204,19 +204,19 @@ if __name__ == '__main__':
         # make directory for course
         makedirs(course_path)
 
-        print('\tAnnouncements')
+        print('  Announcements')
         announcements = get_course_announcements(session, course)
         if announcements:
             parse_announcements(announcements, course_path)
 
-        print('\tGrades')
+        print('  Grades')
         grades = get_course_grades(session, course)
         if grades:
             parse_grades(grades, course_path)
 
-        print('\tFiles')
+        print('  Files')
         files_path = path.join(course_path, 'files')
         makedirs(files_path)
         parse_course_map(session, course, course_map, files_path)
 
-        print('\tAssignments')
+        print('  Assignments')
