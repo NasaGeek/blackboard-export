@@ -163,7 +163,7 @@ if __name__ == '__main__':
             try:
                 with open(path.join(announcements_path, filename), 'x') as outfile:
                     #TODO: convert to markdown?
-                    outfile.write(announcement['#text'])
+                    outfile.write(announcement.get('#text', 'No announcement text'))
                     if '@userdisplayname' in announcement:
                         outfile.write('\n' + announcement['@userdisplayname'])
             except FileExistsError:
