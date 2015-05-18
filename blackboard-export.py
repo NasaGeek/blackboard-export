@@ -120,7 +120,7 @@ if __name__ == '__main__':
                     break
                 folder = dict_to_list_fun(map_item['children']['map-item'])
                 parse_course_map(session, course, folder, new_cwd)
-            elif map_item['@linktype'] in ['resource/x-bb-document', 'resource/x-bb-file']:
+            elif map_item['@linktype'] in ['resource/x-bb-assignment', 'resource/x-bb-document', 'resource/x-bb-file']:
                 # item is downloadable, have at it
                 print('      Downloading', map_item['@name'])
                 """
@@ -224,5 +224,3 @@ if __name__ == '__main__':
         files_path = path.join(course_path, 'files')
         makedirs(files_path)
         parse_course_map(session, course, course_map, files_path)
-
-        print('  Assignments')
